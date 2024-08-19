@@ -1,28 +1,44 @@
-const listImagesEl = document.querySelector('.images-list');
-const loaderEl = document.querySelector('.loader');
+import 'izitoast/dist/css/iziToast.min.css';
+import iziToast from 'izitoast';
 
-export default function renderImages(images) {
-  const murkup = images
-    .map(image => {
-      return `<li class="images-item">
-        <a class="gallery-link" href="${image.largeImageURL}">
-          <img
-            class="gallery-image"
-            src="${image.webformatURL}"
-            alt="${image.tags}"
+export function showErrorMessage(message) {
+  iziToast.error({
+    title: 'Error',
+    message,
+  });
+}
 
-          />
-          <div class="property">
-          <p><span class="weight">Likes</span> ${image.likes}</p>
-          <p><span class="weight">Views</span> ${image.views}</p>
-          <p><span class="weight">Comments</span> ${image.comments}</p>
-          <p><span class="weight">Downloads</span> ${image.downloads}</p>
-          </div>
-        </a>
-      </li>`;
-    })
-    .join('');
+export function createCard(image) {
+  return `
+    <div class="gallery-item">
+      <a href="${image.largeImageURL}" class="gallery-link">
+        <img src="${image.webformatURL}" alt="${
+    image.tags
+  }" class="gallery-image" />
+      </a>
+      <div class="item-info-block">
+        ${createInfo('Likes', image.likes)}
+        ${createInfo('Views', image.views)}
+        ${createInfo('Comments', image.comments)}
+        ${createInfo('Downloads', image.downloads)}
+      </div>
+    </div>
+  `;
+}
 
-  loaderEl.classList.remove('loader-open');
-  listImagesEl.innerHTML = murkup;
+function createInfo(label, value) {
+  return `
+    <div class="block">
+      <p class="title">${label}</p>
+      <p class="amount">${value}</p>
+    </div>
+  `;
+}
+
+export function updateGallery(images) {
+  const galleryListEl = document.querySelector('.gallery');
+  galleryListEl.innerHTML = '';
+
+  const cardsHTML = images.map(image => createCard(image)).join('');
+  galleryListEl.insertAdjacentHTML('beforeend', cardsHTML);
 }

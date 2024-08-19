@@ -1,56 +1,51 @@
-import iziToast from 'izitoast';
-import 'izitoast/dist/css/iziToast.min.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-import fetchImages from './js/pixabay-api';
-import renderImages from './js/render-functions';
+import { getPictures } from './js/pixabay-api.js';
+import { updateGallery, showErrorMessage } from './js/render-functions.js';
 
-const formEl = document.querySelector('.form');
-const listImagesEl = document.querySelector('.images-list');
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionPosition: 'bottom',
+  captionDelay: 250,
+  overlay: true,
+  close: true,
+  className: 'custom-lightbox',
+});
+
+const searchFormEl = document.querySelector('.js-search');
+const galleryEl = document.querySelector('.gallery');
 const loaderEl = document.querySelector('.loader');
-const inputEl = document.querySelector('.input');
 
-formEl.addEventListener('submit', event => {
+searchFormEl.addEventListener('submit', event => {
   event.preventDefault();
-  listImagesEl.innerHTML = '';
-  loaderEl.classList.add('loader-open');
 
-  const valueUser = inputEl.value.trim();
+  galleryEl.innerHTML = '';
 
-  formEl.reset();
-  if (!valueUser) {
-    iziToast.error({
-      title: 'Error',
-      message: 'Please enter a search query',
-    });
-    loaderEl.classList.remove('loader-open');
-    return;
-  }
+  const searchStr = event.target.elements.search.value.trim();
 
-  fetchImages(valueUser)
-    .then(data => {
-      if (data.hits.length === 0) {
-        loaderEl.classList.remove('loader-open');
-        iziToast.warning({
-          title: 'Warning',
-          message:
-            'Sorry, there are no images matching your search query. Please try again!',
-        });
+  if (!searchStr) return;
 
+  loaderEl.classList.toggle('is-hidden');
+
+  getPictures(searchStr)
+    .then(images => {
+      if (!images.hits.length) {
+        showErrorMessage(
+          'Sorry, there are no images matching your search query. Please try again!'
+        );
         return;
       }
 
-      renderImages(data.hits);
-      new SimpleLightbox('.images-list a', {
-        captionsData: 'alt',
-        captionDelay: 250,
-      }).refresh();
+      updateGallery(images.hits);
+
+      lightbox.refresh();
     })
     .catch(error => {
-      iziToast.error({
-        title: 'Error',
-        message: `Something went wrong: ${error.message}`,
-      });
+      showErrorMessage('Unknown error. Please try again!');
+      console.error(error);
+    })
+    .finally(() => {
+      loaderEl.classList.toggle('is-hidden');
     });
 });
